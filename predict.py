@@ -4,15 +4,15 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 import urllib.request
-import numpy as np
 
 # ---------------- DEVICE ----------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# ---------------- MODEL DOWNLOAD ----------------
-MODEL_URL = "https://huggingface.co/Haseebsirkazi/medical-xray-model/tree/main"
+# ---------------- MODEL PATH + DOWNLOAD ----------------
+MODEL_URL = "MODEL_URL = "https://huggingface.co/Haseebsirkazi/medical-xray-model/resolve/main/model.pth"
 MODEL_PATH = "model.pth"
 
+# download if not exists
 if not os.path.exists(MODEL_PATH):
     print("⬇ Downloading model from Hugging Face...")
     urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
@@ -21,23 +21,23 @@ if not os.path.exists(MODEL_PATH):
 model = models.densenet121(weights=None)
 model.classifier = nn.Linear(model.classifier.in_features, 2)
 model.to(device)
-model.eval()
 
 # ---------------- SAFE MODEL LOADING ----------------
-# FIX for Streamlit Cloud + pickle issues
-import torch
+if not os.path.exists(MODEL_PATH):
+    raise FileNotFoundError("Model file not found")
 
 state_dict = torch.load(MODEL_PATH, map_location=device)
-model.load_state_dict(state_dict)
+model.load_state_dict(state_dict, strict=True)
+model.eval()
 
 # ---------------- IMAGE TRANSFORM ----------------
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
-    transforms.Grayscale(num_output_channels=3),  # FIX: X-ray = 1 channel → 3 channel
+    transforms.Grayscale(num_output_channels=3),  # FIX: X-ray 1 channel → 3 channel
     transforms.ToTensor(),
 ])
 
-# ---------------- PREDICTION ----------------
+# ---------------- PREDICTION FUNCTION ----------------
 def predict(image):
     image = transform(image).unsqueeze(0).to(device)
 
@@ -62,7 +62,7 @@ def get_heatmap(img_tensor, class_idx):
 
     target_layer = model.features[-1]
 
-    # hooks
+    # register hooks
     target_layer.register_forward_hook(forward_hook)
     target_layer.register_backward_hook(backward_hook)
 
@@ -76,7 +76,7 @@ def get_heatmap(img_tensor, class_idx):
     grads = gradients[0]
     acts = activations[0]
 
-    # Grad-CAM math (safe version)
+    # Grad-CAM computation
     pooled_grads = torch.mean(grads, dim=(2, 3), keepdim=True)
 
     cam = (pooled_grads * acts).sum(dim=1).squeeze()
