@@ -9,7 +9,7 @@ import urllib.request
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ---------------- MODEL PATH + DOWNLOAD ----------------
-MODEL_URL = "MODEL_URL = "https://huggingface.co/Haseebsirkazi/medical-xray-model/resolve/main/model.pth"
+MODEL_URL = "https://huggingface.co/Haseebsirkazi/medical-xray-model/resolve/main/model.pth"
 MODEL_PATH = "model.pth"
 
 # download if not exists
