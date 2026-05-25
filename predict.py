@@ -25,7 +25,9 @@ model.eval()
 
 # ---------------- SAFE MODEL LOADING ----------------
 # FIX for Streamlit Cloud + pickle issues
-state_dict = torch.load(MODEL_PATH, map_location=device, weights_only=True)
+import torch
+
+state_dict = torch.load(MODEL_PATH, map_location=device)
 model.load_state_dict(state_dict)
 
 # ---------------- IMAGE TRANSFORM ----------------
